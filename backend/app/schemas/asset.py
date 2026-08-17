@@ -5,6 +5,11 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class AssetBase(BaseModel):
     id: str = Field(..., description="Unique asset identifier / ticker (e.g. PETR4, HGLG11, BTC, CDB_INTER_2029)", min_length=1, max_length=50)
+    name: Optional[str] = Field(
+        default=None,
+        description="Human-readable asset name or issuer title (e.g. Petróleo Brasileiro S.A., CSHG Logística)",
+        max_length=150
+    )
     asset_type: str = Field(..., description="Asset class (e.g. STOCK, FII, FIXED_INCOME, TREASURY, CRYPTO, OFFSHORE)", min_length=1, max_length=30)
     currency: str = Field(default="BRL", min_length=3, max_length=3)
     metadata_json: Dict[str, Any] = Field(
@@ -18,6 +23,7 @@ class AssetCreate(AssetBase):
 
 
 class AssetUpdate(BaseModel):
+    name: Optional[str] = None
     asset_type: Optional[str] = None
     currency: Optional[str] = None
     metadata_json: Optional[Dict[str, Any]] = None

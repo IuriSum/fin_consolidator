@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 class AssetPosition(BaseModel):
     asset_id: str
+    name: Optional[str] = None
     asset_type: str
     currency: str
     metadata: Dict[str, Any] = Field(default_factory=dict)

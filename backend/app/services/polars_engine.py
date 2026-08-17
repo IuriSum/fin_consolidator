@@ -35,6 +35,7 @@ def calculate_portfolio_consolidation(
         empty_positions = [
             AssetPosition(
                 asset_id=a.id,
+                name=a.name,
                 asset_type=a.asset_type,
                 currency=a.currency,
                 metadata=a.metadata_json or {},
@@ -97,6 +98,7 @@ def calculate_portfolio_consolidation(
             positions.append(
                 AssetPosition(
                     asset_id=asset_obj.id,
+                    name=asset_obj.name,
                     asset_type=asset_obj.asset_type,
                     currency=asset_obj.currency,
                     metadata=asset_obj.metadata_json or {},
@@ -159,6 +161,7 @@ def calculate_portfolio_consolidation(
         
         pos = AssetPosition(
             asset_id=asset_obj.id,
+            name=asset_obj.name,
             asset_type=asset_obj.asset_type,
             currency=asset_obj.currency,
             metadata=asset_obj.metadata_json or {},

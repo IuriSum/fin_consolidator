@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from sqlalchemy import String, DateTime, text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -10,6 +10,7 @@ class Asset(Base):
     __tablename__ = "assets"
 
     id: Mapped[str] = mapped_column(String(50), primary_key=True, index=True)
+    name: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     asset_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="BRL", server_default="BRL")
     

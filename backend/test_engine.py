@@ -14,6 +14,7 @@ def test_polars_consolidation_flow():
     # 1. Create mock assets
     petr4 = Asset(
         id="PETR4",
+        name="Petróleo Brasileiro S.A. - Petrobras",
         asset_type="STOCK",
         currency="BRL",
         metadata_json={
@@ -24,6 +25,7 @@ def test_polars_consolidation_flow():
     )
     hglg11 = Asset(
         id="HGLG11",
+        name="CSHG Logística FII",
         asset_type="FII",
         currency="BRL",
         metadata_json={
@@ -125,11 +127,13 @@ def test_polars_consolidation_flow():
 
     # Assertions
     petr4_pos = next(p for p in result.positions if p.asset_id == "PETR4")
+    assert petr4_pos.name == "Petróleo Brasileiro S.A. - Petrobras"
     assert petr4_pos.current_quantity == Decimal("150.00000000")
     assert petr4_pos.average_price == Decimal("35.0500")
     assert petr4_pos.total_dividends_received == Decimal("150.00")
     
     hglg_pos = next(p for p in result.positions if p.asset_id == "HGLG11")
+    assert hglg_pos.name == "CSHG Logística FII"
     assert hglg_pos.current_quantity == Decimal("10.00000000")
     assert hglg_pos.average_price == Decimal("160.0000")
     assert hglg_pos.total_dividends_received == Decimal("11.00")

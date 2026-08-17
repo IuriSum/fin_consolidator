@@ -43,6 +43,7 @@ async def create_asset(asset_in: AssetCreate, db: AsyncSession = Depends(get_db)
 
     asset = Asset(
         id=asset_id_normalized,
+        name=asset_in.name.strip() if asset_in.name else None,
         asset_type=asset_in.asset_type.strip().upper(),
         currency=asset_in.currency.strip().upper(),
         metadata_json=asset_in.metadata_json or {},
@@ -67,6 +68,8 @@ async def update_asset(asset_id: str, asset_in: AssetUpdate, db: AsyncSession = 
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Asset '{asset_id}' not found.")
 
+    if asset_in.name is not None:
+        asset.name = asset_in.name.strip() if asset_in.name else None
     if asset_in.asset_type is not None:
         asset.asset_type = asset_in.asset_type.strip().upper()
     if asset_in.currency is not None:
