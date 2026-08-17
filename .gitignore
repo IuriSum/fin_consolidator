@@ -37,3 +37,6 @@ storage/
 .vscode/
 *.swp
 *.swo
+
+#SQL
+.sql

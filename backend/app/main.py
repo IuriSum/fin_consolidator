@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import init_db
+import app.models  # Ensure all SQLAlchemy models are registered in Base.metadata
 from app.api.v1.assets import router as assets_router
 from app.api.v1.transactions import router as transactions_router
 from app.api.v1.consolidation import router as consolidation_router
@@ -42,7 +43,7 @@ async def root():
     return {
         "message": "Financial Consolidator API is operational",
         "docs": "/docs",
-        "version": "0.1.0"
+        "version": "0.1.1"
     }
 
 

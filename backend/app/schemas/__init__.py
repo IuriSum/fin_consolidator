@@ -5,7 +5,21 @@ from app.schemas.transaction import (
     TransactionBulkCreate,
     TransactionResponse,
 )
-from app.schemas.consolidation import AssetPosition, PortfolioConsolidationResponse
+from app.schemas.consolidation import (
+    AssetPosition,
+    PortfolioConsolidationResponse,
+    StockConsolidationItem,
+    FundConsolidationItem,
+    FixedIncomeConsolidationItem,
+    CryptoConsolidationItem,
+    InternationalConsolidationItem,
+    CashConsolidationItem,
+    ConsolidationDataPayload,
+    ConsolidationBase,
+    ConsolidationCreate,
+    ConsolidationUpdate,
+    ConsolidationResponse,
+)
 
 __all__ = [
     "AssetCreate",
@@ -17,4 +31,15 @@ __all__ = [
     "TransactionResponse",
     "AssetPosition",
     "PortfolioConsolidationResponse",
+    "StockConsolidationItem",
+    "FundConsolidationItem",
+    "FixedIncomeConsolidationItem",
+    "CryptoConsolidationItem",
+    "InternationalConsolidationItem",
+    "CashConsolidationItem",
+    "ConsolidationDataPayload",
+    "ConsolidationBase",
+    "ConsolidationCreate",
+    "ConsolidationUpdate",
+    "ConsolidationResponse",
 ]
