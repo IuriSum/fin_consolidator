@@ -1,0 +1,47 @@
+services:
+  # Container 1: PostgreSQL 16 Database
+  db:
+    image: docker.io/library/postgres:16-alpine
+    container_name: fin_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fin_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fin_secret_password}
+      POSTGRES_DB: ${POSTGRES_DB:-fin_consolidator}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - fin_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fin_user} -d ${POSTGRES_DB:-fin_consolidator}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Container 2: FastAPI Python Backend (with Polars engine)
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fin_api
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fin_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fin_secret_password}
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-fin_consolidator}
+      APP_ENV: ${APP_ENV:-development}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      # Live-reload source code during development
+      - ./backend/app:/app/app
+      # Local storage bind mount for raw files, spreadsheets, and backups
+      - ./storage:/app/storage
+    depends_on:
+      - db
+
+volumes:
+  fin_pg_data:
+    driver: local
