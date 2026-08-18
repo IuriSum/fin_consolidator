@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Dict, Any
-from sqlalchemy import String, Date, DateTime, Numeric, ForeignKey, text, func
+from sqlalchemy import Integer, String, Date, DateTime, Numeric, ForeignKey, text, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
@@ -19,9 +19,9 @@ class Transaction(Base):
         server_default=text("gen_random_uuid()")
     )
     
-    # Foreign key referencing Asset
-    asset_id: Mapped[str] = mapped_column(
-        String(50),
+    # Foreign key referencing Asset (Integer ID)
+    asset_id: Mapped[int] = mapped_column(
+        Integer,
         ForeignKey("assets.id", ondelete="CASCADE"),
         nullable=False,
         index=True

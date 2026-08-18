@@ -29,7 +29,7 @@ def calculate_portfolio_consolidation(
         )
 
     # 1. Map assets by ID for quick metadata retrieval
-    asset_map: Dict[str, Asset] = {a.id: a for a in assets}
+    asset_map: Dict[int, Asset] = {a.id: a for a in assets}
 
     if not transactions:
         # Assets exist but have no transactions yet

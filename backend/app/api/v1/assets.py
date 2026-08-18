@@ -23,16 +23,16 @@ async def create_asset(asset_in: AssetCreate, db: AsyncSession = Depends(get_db)
 
 
 @router.get("/{asset_id}", response_model=AssetResponse)
-async def get_asset(asset_id: str, db: AsyncSession = Depends(get_db)):
+async def get_asset(asset_id: int, db: AsyncSession = Depends(get_db)):
     return await AssetService.get_asset_by_id(db=db, asset_id=asset_id)
 
 
 @router.put("/{asset_id}", response_model=AssetResponse)
-async def update_asset(asset_id: str, asset_in: AssetUpdate, db: AsyncSession = Depends(get_db)):
+async def update_asset(asset_id: int, asset_in: AssetUpdate, db: AsyncSession = Depends(get_db)):
     return await AssetService.update_asset(db=db, asset_id=asset_id, asset_in=asset_in)
 
 
 @router.delete("/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_asset(asset_id: str, db: AsyncSession = Depends(get_db)):
+async def delete_asset(asset_id: int, db: AsyncSession = Depends(get_db)):
     await AssetService.delete_asset(db=db, asset_id=asset_id)
     return None

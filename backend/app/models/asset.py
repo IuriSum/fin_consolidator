@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Dict, Any
-from sqlalchemy import String, DateTime, text, func
+from sqlalchemy import Integer, String, DateTime, text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
@@ -9,7 +9,7 @@ from app.core.database import Base
 class Asset(Base):
     __tablename__ = "assets"
 
-    id: Mapped[str] = mapped_column(String(50), primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, index=True)
     name: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
     type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     

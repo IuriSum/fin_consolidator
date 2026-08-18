@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 
 class AssetPosition(BaseModel):
-    asset_id: str
+    asset_id: int
     name: Optional[str] = None
     type: str
     currency: str = "BRL"

@@ -28,28 +28,18 @@ class AssetService:
         return assets
 
     @staticmethod
-    async def get_asset_by_id(db: AsyncSession, asset_id: str) -> Asset:
-        asset_id_norm = asset_id.strip().upper()
-        asset = await db.get(Asset, asset_id_norm)
+    async def get_asset_by_id(db: AsyncSession, asset_id: int) -> Asset:
+        asset = await db.get(Asset, asset_id)
         if not asset:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Asset '{asset_id_norm}' not found."
+                detail=f"Asset with ID {asset_id} not found."
             )
         return asset
 
     @staticmethod
     async def create_asset(db: AsyncSession, asset_in: AssetCreate) -> Asset:
-        asset_id_norm = asset_in.id.strip().upper()
-        existing = await db.get(Asset, asset_id_norm)
-        if existing:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Asset with ticker/ID '{asset_id_norm}' already exists."
-            )
-
         asset = Asset(
-            id=asset_id_norm,
             name=asset_in.name.strip(),
             type=asset_in.type.strip().upper(),
             metadata_json=asset_in.metadata_json or {},
@@ -60,7 +50,7 @@ class AssetService:
         return asset
 
     @staticmethod
-    async def update_asset(db: AsyncSession, asset_id: str, asset_in: AssetUpdate) -> Asset:
+    async def update_asset(db: AsyncSession, asset_id: int, asset_in: AssetUpdate) -> Asset:
         asset = await AssetService.get_asset_by_id(db, asset_id)
 
         if asset_in.name is not None:
@@ -75,7 +65,7 @@ class AssetService:
         return asset
 
     @staticmethod
-    async def delete_asset(db: AsyncSession, asset_id: str) -> None:
+    async def delete_asset(db: AsyncSession, asset_id: int) -> None:
         asset = await AssetService.get_asset_by_id(db, asset_id)
         await db.delete(asset)
         await db.commit()

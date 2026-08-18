@@ -1,8 +1,8 @@
 """
-Standard Asset Types and Classification Constants for Brazilian Financial Assets.
+Standard Asset Types, Classification Constants, and Metadata Templates for Brazilian Financial Assets.
 """
 from enum import Enum
-from typing import List, Dict
+from typing import List, Dict, Any
 
 
 class AssetType(str, Enum):
@@ -45,4 +45,13 @@ ASSET_TYPE_LABELS: Dict[str, str] = {
     AssetType.FUNDO.value: "Fundos de Investimento Tradicionais (Multimercado, FIA, FIRF)",
     AssetType.CRIPTO.value: "Criptoativos (Bitcoin, Ethereum, etc.)",
     AssetType.OTHER.value: "Outros Ativos / Personalizados",
+}
+
+
+# Standard JSONB metadata template for stocks and funds
+ASSET_METADATA_TEMPLATE: Dict[str, Any] = {
+    "company": "",
+    "cnpj": "",
+    "quantity": 0.0,
+    "medium_price": 0.0,
 }

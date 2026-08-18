@@ -14,7 +14,7 @@ class TransactionService:
     @staticmethod
     async def validate_sell_inventory(
         db: AsyncSession,
-        asset_id: str,
+        asset_id: int,
         trade_date: date,
         sell_quantity: Decimal
     ) -> None:
@@ -45,7 +45,7 @@ class TransactionService:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=(
-                    f"Insufficient inventory for asset '{asset_id}': "
+                    f"Insufficient inventory for asset ID {asset_id}: "
                     f"Attempting to SELL {sell_quantity}, but current available "
                     f"balance is {current_qty} as of {trade_date}."
                 )
@@ -54,15 +54,15 @@ class TransactionService:
     @staticmethod
     async def list_transactions(
         db: AsyncSession,
-        asset_id: Optional[str] = None,
+        asset_id: Optional[int] = None,
         type: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None
     ) -> List[Transaction]:
         query = select(Transaction).order_by(Transaction.trade_date.desc(), Transaction.created_at.desc())
         
-        if asset_id:
-            query = query.where(Transaction.asset_id == asset_id.strip().upper())
+        if asset_id is not None:
+            query = query.where(Transaction.asset_id == asset_id)
         if type:
             query = query.where(Transaction.type == type.strip().upper())
         if start_date:
@@ -75,12 +75,11 @@ class TransactionService:
 
     @staticmethod
     async def create_transaction(db: AsyncSession, tx_in: TransactionCreate) -> Transaction:
-        asset_id_norm = tx_in.asset_id.strip().upper()
-        asset = await db.get(Asset, asset_id_norm)
+        asset = await db.get(Asset, tx_in.asset_id)
         if not asset:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Asset '{asset_id_norm}' does not exist. Please register the asset before adding transactions."
+                detail=f"Asset with ID {tx_in.asset_id} does not exist. Please register the asset before adding transactions."
             )
 
         # Stateful validation: check inventory on SELL operations
@@ -89,13 +88,13 @@ class TransactionService:
             if sell_qty > Decimal("0"):
                 await TransactionService.validate_sell_inventory(
                     db=db,
-                    asset_id=asset_id_norm,
+                    asset_id=tx_in.asset_id,
                     trade_date=tx_in.trade_date,
                     sell_quantity=sell_qty
                 )
 
         tx = Transaction(
-            asset_id=asset_id_norm,
+            asset_id=tx_in.asset_id,
             type=tx_in.type.strip().upper(),
             trade_date=tx_in.trade_date,
             total_spent=tx_in.total_spent,
@@ -112,7 +111,7 @@ class TransactionService:
         bulk_in: TransactionBulkCreate
     ) -> List[Transaction]:
         # 1. Verify all target assets exist
-        asset_ids = {t.asset_id.strip().upper() for t in bulk_in.transactions}
+        asset_ids = {t.asset_id for t in bulk_in.transactions}
         existing_assets_result = await db.execute(select(Asset.id).where(Asset.id.in_(asset_ids)))
         existing_asset_ids = set(existing_assets_result.scalars().all())
         
@@ -120,7 +119,7 @@ class TransactionService:
         if missing_assets:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"The following assets do not exist: {sorted(list(missing_assets))}. Please register them first."
+                detail=f"The following asset IDs do not exist: {sorted(list(missing_assets))}. Please register them first."
             )
 
         # 2. Sort transactions chronologically for batch processing
@@ -129,7 +128,7 @@ class TransactionService:
         # 3. Create transaction entities
         tx_objects = [
             Transaction(
-                asset_id=t.asset_id.strip().upper(),
+                asset_id=t.asset_id,
                 type=t.type.strip().upper(),
                 trade_date=t.trade_date,
                 total_spent=t.total_spent,

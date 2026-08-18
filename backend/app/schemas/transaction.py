@@ -17,8 +17,8 @@ VALID_TRANSACTION_TYPES = {
 
 
 class TransactionBase(BaseModel):
-    # Foreign Key to Asset
-    asset_id: str = Field(..., description="Target asset ticker / identifier (FK to Asset)", min_length=1, max_length=50)
+    # Foreign Key to Asset (Integer ID)
+    asset_id: int = Field(..., description="Target asset ID (FK to Asset integer ID)", ge=1)
     
     # Core columns
     type: str = Field(..., description="Operation type (BUY, SELL, OTHER, DIVIDEND, JCP, SPLIT, BONUS, AMORTIZATION)", min_length=1, max_length=20)
@@ -30,14 +30,6 @@ class TransactionBase(BaseModel):
         default_factory=dict,
         description="Remaining data stored in JSONB (quantity, unit_price, total_costs, broker, etc.)"
     )
-
-    @field_validator("asset_id")
-    @classmethod
-    def normalize_asset_id(cls, v: str) -> str:
-        cleaned = v.strip().upper()
-        if not cleaned:
-            raise ValueError("Asset ID cannot be empty.")
-        return cleaned
 
     @field_validator("type")
     @classmethod

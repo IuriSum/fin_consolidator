@@ -16,7 +16,7 @@ router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
 @router.get("", response_model=List[TransactionResponse])
 async def list_transactions(
-    asset_id: Optional[str] = Query(None, description="Filter by asset ticker"),
+    asset_id: Optional[int] = Query(None, description="Filter by asset integer ID"),
     type: Optional[str] = Query(None, description="Filter by transaction operation type (BUY, SELL, OTHER, etc.)"),
     start_date: Optional[date] = Query(None, description="Filter from date (inclusive)"),
     end_date: Optional[date] = Query(None, description="Filter up to date (inclusive)"),
