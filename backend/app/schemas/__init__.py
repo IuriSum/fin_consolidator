@@ -1,6 +1,5 @@
 from app.schemas.asset import AssetCreate, AssetUpdate, AssetResponse
 from app.schemas.transaction import (
-    OperationType,
     TransactionCreate,
     TransactionBulkCreate,
     TransactionResponse,
@@ -25,7 +24,6 @@ __all__ = [
     "AssetCreate",
     "AssetUpdate",
     "AssetResponse",
-    "OperationType",
     "TransactionCreate",
     "TransactionBulkCreate",
     "TransactionResponse",

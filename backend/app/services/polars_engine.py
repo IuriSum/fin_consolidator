@@ -15,6 +15,7 @@ def calculate_portfolio_consolidation(
     High-performance portfolio consolidation using Polars.
     Computes current positions, Preço Médio (Weighted Average Price),
     accumulated income, and category breakdowns.
+    Asset types are resolved from the Asset model.
     """
     if not assets:
         return PortfolioConsolidationResponse(
@@ -23,7 +24,7 @@ def calculate_portfolio_consolidation(
             total_portfolio_dividends=Decimal("0.00"),
             total_portfolio_jcp=Decimal("0.00"),
             total_assets_count=0,
-            by_asset_type={},
+            by_type={},
             positions=[],
         )
 
@@ -36,8 +37,8 @@ def calculate_portfolio_consolidation(
             AssetPosition(
                 asset_id=a.id,
                 name=a.name,
-                asset_type=a.asset_type,
-                currency=a.currency,
+                type=a.type,
+                currency=a.metadata_json.get("currency", "BRL") if a.metadata_json else "BRL",
                 metadata=a.metadata_json or {},
                 current_quantity=Decimal("0.00000000"),
                 average_price=Decimal("0.0000"),
@@ -56,24 +57,35 @@ def calculate_portfolio_consolidation(
             total_portfolio_dividends=Decimal("0.00"),
             total_portfolio_jcp=Decimal("0.00"),
             total_assets_count=len(assets),
-            by_asset_type={},
+            by_type={},
             positions=empty_positions,
         )
 
-    # 2. Build Polars DataFrame from transactions
-    tx_data = [
-        {
+    # 2. Build Polars DataFrame from transactions (operation type from t.type, details from JSONB)
+    tx_data = []
+    for t in transactions:
+        det = t.details or {}
+        qty = float(det.get("quantity", 0.0))
+        unit_price = float(det.get("unit_price", 0.0))
+        total_costs = float(det.get("total_costs", 0.0))
+        total_spent = float(t.total_spent)
+        op = str(t.type).upper()
+        
+        # If unit_price wasn't explicit, infer from total_spent / qty
+        if unit_price == 0.0 and qty > 0 and total_spent > 0:
+            unit_price = total_spent / qty
+
+        tx_data.append({
             "id": str(t.id),
             "asset_id": t.asset_id,
             "trade_date": t.trade_date.isoformat(),
-            "operation_type": str(t.operation_type).upper(),
-            "quantity": float(t.quantity),
-            "unit_price": float(t.unit_price),
-            "total_costs": float(t.total_costs),
-            "broker": t.broker or "",
-        }
-        for t in transactions
-    ]
+            "total_spent": total_spent,
+            "operation_type": op,
+            "quantity": qty,
+            "unit_price": unit_price,
+            "total_costs": total_costs,
+            "broker": str(det.get("broker", "")),
+        })
 
     df = pl.DataFrame(tx_data)
     
@@ -83,9 +95,6 @@ def calculate_portfolio_consolidation(
     # 3. Calculate position state per asset
     positions: List[AssetPosition] = []
     
-    # Group transactions by asset
-    unique_assets = df["asset_id"].unique().to_list()
-    
     total_port_invested = Decimal("0.00")
     total_port_dividends = Decimal("0.00")
     total_port_jcp = Decimal("0.00")
@@ -93,14 +102,15 @@ def calculate_portfolio_consolidation(
     for asset_id in asset_map.keys():
         asset_obj = asset_map[asset_id]
         asset_txs = df.filter(pl.col("asset_id") == asset_id)
+        currency = asset_obj.metadata_json.get("currency", "BRL") if asset_obj.metadata_json else "BRL"
 
         if asset_txs.height == 0:
             positions.append(
                 AssetPosition(
                     asset_id=asset_obj.id,
                     name=asset_obj.name,
-                    asset_type=asset_obj.asset_type,
-                    currency=asset_obj.currency,
+                    type=asset_obj.type,
+                    currency=currency,
                     metadata=asset_obj.metadata_json or {},
                     current_quantity=Decimal("0.00000000"),
                     average_price=Decimal("0.0000"),
@@ -128,11 +138,12 @@ def calculate_portfolio_consolidation(
             q = Decimal(str(r["quantity"]))
             p = Decimal(str(r["unit_price"]))
             c = Decimal(str(r["total_costs"]))
+            spent = Decimal(str(r["total_spent"]))
             last_date = r["trade_date"]
             total_costs_paid += c
 
             if op in ["BUY", "SUBSCRIPTION"]:
-                trade_total = (q * p) + c
+                trade_total = spent if spent > 0 else (q * p) + c
                 total_cost_basis += trade_total
                 current_qty += q
             elif op == "SELL":
@@ -145,25 +156,31 @@ def calculate_portfolio_consolidation(
                         current_qty = Decimal("0")
                         total_cost_basis = Decimal("0")
             elif op == "DIVIDEND":
-                total_dividends += (q * p)
+                div_amount = spent if spent > 0 else (q * p)
+                total_dividends += div_amount
             elif op == "JCP":
-                total_jcp += (q * p)
+                jcp_amount = spent if spent > 0 else (q * p)
+                total_jcp += jcp_amount
             elif op in ["SPLIT", "BONUS"]:
                 # Split adds shares without increasing cost basis
                 current_qty += q
             elif op == "AMORTIZATION":
                 # Amortization directly reduces cost basis
-                total_cost_basis -= (q * p)
+                amort_amount = spent if spent > 0 else (q * p)
+                total_cost_basis -= amort_amount
                 if total_cost_basis < 0:
                     total_cost_basis = Decimal("0")
+            elif op == "OTHER":
+                # General other operations (non-position impacting unless specified)
+                pass
 
         avg_price = (total_cost_basis / current_qty) if current_qty > 0 else Decimal("0.0000")
         
         pos = AssetPosition(
             asset_id=asset_obj.id,
             name=asset_obj.name,
-            asset_type=asset_obj.asset_type,
-            currency=asset_obj.currency,
+            type=asset_obj.type,
+            currency=currency,
             metadata=asset_obj.metadata_json or {},
             current_quantity=round(current_qty, 8),
             average_price=round(avg_price, 4),
@@ -181,24 +198,24 @@ def calculate_portfolio_consolidation(
         total_port_jcp += pos.total_jcp_received
 
     # 4. Summary by Asset Type
-    by_asset_type: Dict[str, Dict[str, Any]] = {}
+    by_type: Dict[str, Dict[str, Any]] = {}
     for pos in positions:
-        atype = pos.asset_type
-        if atype not in by_asset_type:
-            by_asset_type[atype] = {
+        atype = pos.type
+        if atype not in by_type:
+            by_type[atype] = {
                 "total_invested": Decimal("0.00"),
                 "total_dividends": Decimal("0.00"),
                 "total_jcp": Decimal("0.00"),
                 "asset_count": 0,
                 "allocation_pct": Decimal("0.00"),
             }
-        by_asset_type[atype]["total_invested"] += pos.total_invested
-        by_asset_type[atype]["total_dividends"] += pos.total_dividends_received
-        by_asset_type[atype]["total_jcp"] += pos.total_jcp_received
-        by_asset_type[atype]["asset_count"] += 1
+        by_type[atype]["total_invested"] += pos.total_invested
+        by_type[atype]["total_dividends"] += pos.total_dividends_received
+        by_type[atype]["total_jcp"] += pos.total_jcp_received
+        by_type[atype]["asset_count"] += 1
 
     # Compute allocation percentages
-    for atype, data in by_asset_type.items():
+    for atype, data in by_type.items():
         if total_port_invested > 0:
             data["allocation_pct"] = round((data["total_invested"] / total_port_invested) * Decimal("100.0"), 2)
         else:
@@ -207,9 +224,9 @@ def calculate_portfolio_consolidation(
     return PortfolioConsolidationResponse(
         consolidated_at=datetime.utcnow(),
         total_portfolio_invested=round(total_port_invested, 2),
-        total_portfolio_dividends=round(total_portfolio_dividends, 2),
+        total_portfolio_dividends=round(total_port_dividends, 2),
         total_portfolio_jcp=round(total_port_jcp, 2),
         total_assets_count=len(assets),
-        by_asset_type=by_asset_type,
+        by_type=by_type,
         positions=positions,
     )

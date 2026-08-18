@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field, ConfigDict
 class AssetPosition(BaseModel):
     asset_id: str
     name: Optional[str] = None
-    asset_type: str
-    currency: str
+    type: str
+    currency: str = "BRL"
     metadata: Dict[str, Any] = Field(default_factory=dict)
     
     # Computed metrics
@@ -33,7 +33,7 @@ class PortfolioConsolidationResponse(BaseModel):
     total_assets_count: int
     
     # Breakdown by asset type
-    by_asset_type: Dict[str, Dict[str, Any]]
+    by_type: Dict[str, Dict[str, Any]]
     
     # Detailed list of positions
     positions: List[AssetPosition]

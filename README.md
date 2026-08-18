@@ -33,16 +33,16 @@ Open your browser and navigate to:
 ## Core Endpoints
 
 ### 1. Assets (`/api/v1/assets`)
-- `POST /api/v1/assets`: Register an asset with arbitrary JSON multi-classification metadata.
-- `GET /api/v1/assets`: List assets (supports `?asset_type=STOCK` or `?tag=Dividendos`).
+- `POST /api/v1/assets`: Register an asset (`id`, `name`, `type`, and JSONB `metadata_json`).
+- `GET /api/v1/assets`: List assets (supports `?type=STOCK` or `?tag=Dividendos`).
 - `GET /api/v1/assets/{id}`: Retrieve single asset.
-- `PUT /api/v1/assets/{id}`: Update metadata or tags.
+- `PUT /api/v1/assets/{id}`: Update name, type, or metadata.
 - `DELETE /api/v1/assets/{id}`: Delete asset.
 
 ### 2. Transactions (`/api/v1/transactions`)
-- `POST /api/v1/transactions`: Register a transaction (obligatory `trade_date`, `operation_type`, high-precision `quantity` and `unit_price`).
+- `POST /api/v1/transactions`: Register a transaction (`asset_id`, `type`, `trade_date`, `total_spent`, and JSONB `details`).
 - `POST /api/v1/transactions/bulk`: Bulk insert transactions from broker notes or spreadsheets.
-- `GET /api/v1/transactions`: List transactions with filters (`asset_id`, `operation_type`, date range).
+- `GET /api/v1/transactions`: List transactions with filters (`asset_id`, `type`, date range).
 - `DELETE /api/v1/transactions/{id}`: Delete transaction.
 
 ### 3. Portfolio Consolidation (`/api/v1/portfolio/consolidation`)

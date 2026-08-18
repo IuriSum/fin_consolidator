@@ -6,6 +6,7 @@ from sqlalchemy import String, Date, DateTime, Numeric, ForeignKey, text, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
+from app.models.asset import Asset
 
 
 class Transaction(Base):
@@ -18,6 +19,7 @@ class Transaction(Base):
         server_default=text("gen_random_uuid()")
     )
     
+    # Foreign key referencing Asset
     asset_id: Mapped[str] = mapped_column(
         String(50),
         ForeignKey("assets.id", ondelete="CASCADE"),
@@ -25,23 +27,12 @@ class Transaction(Base):
         index=True
     )
     
-    # Obligatory Fields
+    # Core columns: type (BUY/SELL/OTHER/etc.), trade_date, total_spent
+    type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     trade_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    operation_type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    total_spent: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
     
-    # Financial precision fields (Decimal)
-    quantity: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
-    unit_price: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
-    total_costs: Mapped[Decimal] = mapped_column(
-        Numeric(18, 4),
-        nullable=False,
-        default=Decimal("0.0000"),
-        server_default="0.0000"
-    )
-    
-    broker: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    
-    # JSONB default to {}
+    # Remaining data in JSONB (quantity, unit_price, total_costs, broker, notes, taxes, etc.)
     details: Mapped[Dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
@@ -61,4 +52,5 @@ class Transaction(Base):
         nullable=False
     )
 
-    asset: Mapped["Asset"] = relationship("Asset", back_populates="transactions")
+    # Unidirectional relationship to Asset (Asset class does not receive FK to Transaction)
+    asset: Mapped["Asset"] = relationship("Asset")

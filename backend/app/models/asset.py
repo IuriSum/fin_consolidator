@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from sqlalchemy import String, DateTime, text, func
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 
 
@@ -10,11 +10,10 @@ class Asset(Base):
     __tablename__ = "assets"
 
     id: Mapped[str] = mapped_column(String(50), primary_key=True, index=True)
-    name: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
-    asset_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
-    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="BRL", server_default="BRL")
+    name: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     
-    # Flexible multi-classification and tags default to {}
+    # Remaining data is stored in JSONB default to {}
     metadata_json: Mapped[Dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
@@ -32,11 +31,4 @@ class Asset(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False
-    )
-
-    transactions: Mapped[List["Transaction"]] = relationship(
-        "Transaction",
-        back_populates="asset",
-        cascade="all, delete-orphan",
-        order_by="Transaction.trade_date.asc()"
     )
